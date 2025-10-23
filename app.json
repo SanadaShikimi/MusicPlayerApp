@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "MusicPlayerApp",
+    "scheme": "musicplayerapp",
     "slug": "MusicPlayerApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,10 +21,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.MusicPlayerApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }
