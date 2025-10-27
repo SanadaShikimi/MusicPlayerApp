@@ -12,6 +12,7 @@ import {
   addFavorite, removeFavorite, isFavorite,
   getPlaylists, addSongToPlaylist
 } from '../services/Database';
+import AddToPlaylistModal from '../components/AddToPlaylistModal';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS } from '../constants/colors';
 import * as Progress from 'react-native-progress';
@@ -108,6 +109,7 @@ export default function PlayerScreen() {
   } = useMusicPlayer();
 
   const [isFav, setIsFav] = useState(false);
+  const [isPlaylistModalVisible, setIsPlaylistModalVisible] = useState(false);
 
   useEffect(() => {
     if (currentTrack) {
@@ -137,33 +139,9 @@ export default function PlayerScreen() {
     }
   };
 
-  const handleAddToPlaylist = async () => {
+  const handleAddToPlaylist = () => {
     if (!currentTrack) return;
-    const playlists = await getPlaylists();
-    if (playlists.length === 0) {
-      Alert.alert('Không có Playlist', 'Bạn cần tạo playlist trước tiên.');
-      return;
-    }
-    const buttons = playlists.map(playlist => ({
-      text: playlist.name,
-      onPress: async () => {
-        try {
-          await addSongToPlaylist(playlist.id, currentTrack);
-          Alert.alert('Thành công', `Đã thêm "${currentTrack.title}" vào playlist "${playlist.name}"`);
-        } catch (e) {
-          Alert.alert('Lỗi', `Không thể thêm bài hát: ${e.message}`);
-        }
-      },
-    }));
-    buttons.push({
-      text: 'Hủy',
-      style: 'cancel',
-    });
-    Alert.alert(
-      'Thêm vào Playlist',
-      'Chọn một playlist để thêm bài hát:',
-      buttons
-    );
+    setIsPlaylistModalVisible(true);
   };
 
   const handleShare = async () => {
@@ -497,6 +475,18 @@ export default function PlayerScreen() {
               />
             </TouchableOpacity>
 
+            <TouchableOpacity
+                onPress={handleAddToPlaylist} // ✅ Gọi hàm mở Modal
+                disabled={isLoading || isDownloadingThisSong}
+                style={styles.bottomControlButton}
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={getIconColor(false, isLoading || isDownloadingThisSong)}
+                />
+              </TouchableOpacity>
+
             {canDownload && (
               <TouchableOpacity
                 onPress={() => {
@@ -575,6 +565,11 @@ export default function PlayerScreen() {
           </View>
         </View>
       </ScrollView>
+      <AddToPlaylistModal
+          visible={isPlaylistModalVisible}
+          onClose={() => setIsPlaylistModalVisible(false)}
+          songToAdd={currentTrack} 
+      />
     </SafeAreaView>
   );
 }
