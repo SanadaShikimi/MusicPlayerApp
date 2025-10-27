@@ -520,18 +520,6 @@ export default function PlayerScreen() {
             )}
 
             <TouchableOpacity 
-              onPress={handleAddToPlaylist} 
-              disabled={isLoading || isDownloadingThisSong} 
-              style={styles.bottomControlButton}
-            >
-              <Ionicons
-                name="add-circle-outline"
-                size={22}
-                color={getIconColor(false, isLoading || isDownloadingThisSong)}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
               onPress={handleShare} 
               disabled={isLoading || isDownloadingThisSong} 
               style={styles.bottomControlButton}
