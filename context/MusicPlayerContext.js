@@ -110,63 +110,71 @@ export const MusicPlayerProvider = ({ children }) => {
     }
   };
 
- const playTrack = async (track, list = [], options = {}) => {
+  const playTrack = async (track, list = [], options = {}) => {
     if (!options.isContinuation && track && track.id !== currentTrack?.id) {
-       addSongToHistory(track);
+      addSongToHistory(track);
     }
+    
     if (isLoading) return;
     setIsLoading(true);
+
+    isHandlingEnd.current = false;
+
     if (sound) {
-      await sound.unloadAsync(); setSound(null); setPlaybackStatus(null);
+      try {
+        await sound.unloadAsync();
+      } catch (error) {
+        console.error("Error unloading sound:", error);
+      }
+      setSound(null);
+      setPlaybackStatus(null);
     }
 
     if (track) {
       setCurrentTrack(track);
+      
       if (!options.isContinuation) {
-           const newList = list.length > 0 ? list : [track];
-           setOriginalSongList(newList);
-           if (isShuffleOn) { /* ... shuffle logic ... */ }
-           else { setActiveSongList(newList); }
+        const newList = list.length > 0 ? list : [track];
+        setOriginalSongList(newList);
+        
+        if (isShuffleOn) {
+          const otherSongs = newList.filter(t => t.id !== track.id);
+          const shuffled = [track, ...shuffleArray(otherSongs)];
+          setActiveSongList(shuffled);
+        } else {
+          setActiveSongList(newList);
+        }
       }
 
       try {
         let source;
-        const localUri = downloadedSongs[track.id]; // Ưu tiên offline
-
+        
+        // Ưu tiên file đã tải về
+        const localUri = downloadedSongs[track.id];
         if (localUri) {
           console.log(`Playing offline version: ${localUri}`);
           source = { uri: localUri };
-        } else if (typeof track.url === 'string') { // Link web
+        } else if (typeof track.url === 'string') {
           source = { uri: track.url };
         } else {
-          // --- XỬ LÝ REQUIRE ---
-          // Tìm lại bài hát gốc trong MOCK_SONGS bằng ID
-          const originalSong = MOCK_SONGS.find(song => song.id === track.id);
-          if (originalSong && typeof originalSong.url !== 'string') {
-             // Lấy require() gốc từ MOCK_SONGS
-             console.log("Playing from original require() source");
-             source = originalSong.url;
-          } else if (typeof track.url !== 'string') {
-             // Nếu không tìm thấy hoặc track.url không phải require() gốc? Vẫn thử dùng nó
-             console.warn("Could not find original song in MOCK_SONGS, attempting to play passed source");
-             source = track.url;
-          } else {
-             // Trường hợp url là string nhưng không phải link web? (Lỗi logic?)
-             throw new Error("Invalid track source type after checks.");
-          }
-          // --- KẾT THÚC XỬ LÝ REQUIRE ---
+          source = track.url;
         }
 
-        if (!source) throw new Error("Could not determine valid playback source.");
+        if (!source) throw new Error("Invalid track source");
 
         const { sound: newSound } = await Audio.Sound.createAsync(
           source,
-          { shouldPlay: true, volume: volume },
+          {
+            shouldPlay: true,
+            volume: volume,
+          },
           onPlaybackStatusUpdate
         );
+        
         setSound(newSound);
+        setIsPlaying(true);
       } catch (error) {
-        console.error("Lỗi khi tải/phát bài hát:", error);
+        console.error("Lỗi khi tải bài hát:", error);
         
         // Fallback: nếu phát offline lỗi, thử phát từ bundle
         if (localUri && track.url && typeof track.url !== 'string') {
